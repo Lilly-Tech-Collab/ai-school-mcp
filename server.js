@@ -48,9 +48,76 @@ async function getJSON(url) {
   return json;
 }
 
+/**
+ * Find the [start, end) span of a balanced element, given a regex match for its
+ * opening tag. Returns null if the closing tag is missing, so a malformed page
+ * loses nothing rather than having the rest of the document deleted.
+ */
+function blockSpan(html, tag, openMatch) {
+  // NB: \\b, not \b. Inside a template literal \b is the backspace escape, so a
+  // single backslash silently builds a regex that matches U+0008 and therefore
+  // never fires. That exact slip is what shipped the unscoped extraction.
+  const scan = new RegExp(`<(/?)${tag}\\b`, 'gi');
+  scan.lastIndex = openMatch.index + openMatch[0].length;
+  let depth = 1, m;
+  while ((m = scan.exec(html))) {
+    depth += m[1] ? -1 : 1;
+    if (depth === 0) {
+      const close = html.indexOf('>', m.index);
+      return [openMatch.index, close === -1 ? m.index : close + 1];
+    }
+  }
+  return null;
+}
+
+/** Remove every <tag> whose class list contains `marker`, nesting included. */
+function removeBlocks(html, tag, marker) {
+  const open = new RegExp(`<${tag}\\b[^>]*\\bclass="[^"]*\\b${marker}\\b[^"]*"[^>]*>`, 'i');
+  for (let guard = 0; guard < 50; guard++) {
+    const m = open.exec(html);
+    if (!m) break;
+    const span = blockSpan(html, tag, m);
+    if (!span) break;
+    html = html.slice(0, span[0]) + html.slice(span[1]);
+  }
+  return html;
+}
+
+/**
+ * Reduce a page to the part a reader came for.
+ *
+ * Why this is not just tag stripping. The previous version removed <nav>,
+ * <header> and <footer>, which on this site removes almost nothing: the site
+ * header is an EMPTY <header> that main.js fills in at runtime, the per-topic
+ * lesson list is an <aside class="sidebar">, and the affiliate block is a
+ * <section> inside <main>. So every read_lesson call returned a few hundred
+ * characters of whitespace, orphaned list bullets and a cloud-hosting advert
+ * before reaching the lesson, on every call, burning the caller's context.
+ *
+ * Order matters: narrow to <main> first, then drop the furniture inside it.
+ */
+function extractReadable(html) {
+  const mainOpen = /<main\b[^>]*>/i.exec(html);
+  if (mainOpen) {
+    const span = blockSpan(html, 'main', mainOpen);
+    if (span) html = html.slice(span[0], span[1]);
+  }
+
+  const asideOpen = /<aside\b[^>]*>/i.exec(html);
+  if (asideOpen) {
+    const span = blockSpan(html, 'aside', asideOpen);
+    if (span) html = html.slice(0, span[0]) + html.slice(span[1]);
+  }
+  html = removeBlocks(html, 'div', 'sidebar-overlay');
+  html = removeBlocks(html, 'section', 'affiliate-resources');
+  html = removeBlocks(html, 'div', 'page-nav');
+  html = removeBlocks(html, 'nav', 'breadcrumb');
+  return html;
+}
+
 /** Strip a lesson page down to readable text. */
 function htmlToText(html) {
-  return html
+  return extractReadable(html)
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<nav[\s\S]*?<\/nav>/gi, '')
@@ -68,6 +135,10 @@ function htmlToText(html) {
     .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/&rsquo;/g, "'").replace(/&mdash;/g, '-').replace(/&ndash;/g, '-')
     .replace(/[ \t]{2,}/g, ' ')
+    // Empty inline elements leave lines holding a single space. They survive
+    // the \n{3,} collapse below because the space breaks the run, so they have
+    // to be emptied first or the output keeps ragged gaps between paragraphs.
+    .replace(/^[ \t]+$/gm, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }

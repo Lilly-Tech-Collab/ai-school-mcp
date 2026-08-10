@@ -112,6 +112,44 @@ try {
   check("search_lessons returns results from the live API",
         !called?.isError && text.length > 0,
         text.split("\n")[0]?.slice(0, 70));
+
+  // read_lesson must return the LESSON, not the page furniture around it.
+  //
+  // The first version of htmlToText stripped <nav>/<header>/<footer>, none of
+  // which is how this site's chrome is marked up: the header is empty until
+  // main.js fills it, the lesson list is an <aside>, and the affiliate block is
+  // a <section> inside <main>. Every call therefore shipped a few hundred
+  // characters of whitespace, orphaned bullets and a hosting advert before the
+  // content. Nothing failed - it just quietly wasted the caller's context on
+  // every single call, which is exactly the kind of regression a "does it
+  // return something" assertion cannot see. Hence these.
+  const lesson = await send("tools/call", {
+    name: "read_lesson",
+    arguments: {
+      url: "https://lillytechsystems.com/ai-frontier/mechanistic-interpretability/activation-patching.html",
+    },
+  });
+  const body = (lesson?.content?.[0]?.text || "").replace(/^Source:.*\n+/, "");
+  check("read_lesson returns the lesson body", !lesson?.isError && body.length > 1000,
+        `${body.length} chars`);
+  // The heading should be within the first line or two (a difficulty tag may
+  // precede it), not after a wall of collapsed chrome.
+  const toHeading = body.indexOf("\n# ");
+  check("read_lesson opens at the content, not blank chrome",
+        body.trimStart().startsWith("#") || (toHeading >= 0 && toHeading < 80),
+        JSON.stringify(body.slice(0, 48)));
+  check("read_lesson excludes the affiliate block", !/DigitalOcean/.test(body));
+  check("read_lesson excludes the sidebar lesson list", !/Topic Progress/.test(body));
+
+  // The host lock is the only thing standing between this tool and an SSRF
+  // primitive, so it is asserted rather than assumed.
+  const blocked = await send("tools/call", {
+    name: "read_lesson",
+    arguments: { url: "https://example.com/" },
+  });
+  check("read_lesson refuses hosts other than lillytechsystems.com",
+        blocked?.isError === true,
+        (blocked?.content?.[0]?.text || "").slice(0, 60));
 } catch (err) {
   check("run completed without throwing", false, err.message);
 } finally {
