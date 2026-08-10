@@ -1,0 +1,27 @@
+name: CI
+
+# The smoke test talks to the live curriculum API, so this catches two
+# different failures with one job: the server breaking, and the API it reads
+# being broken by a content change in the site repo.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # 06:40 UTC daily. The API lives in another repo and can regress without
+    # anything here changing, which is exactly the case a push-only CI misses.
+    - cron: "40 6 * * *"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - run: node smoke-test.mjs

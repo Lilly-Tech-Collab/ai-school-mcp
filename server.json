@@ -1,0 +1,31 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.lilly-tech-collab/ai-school",
+  "description": "Search and read the free AI School curriculum: 550+ tracks and 21,000+ lessons on AI engineering, governance, security and applied AI, so an assistant can cite a lesson instead of a paragraph.",
+  "status": "active",
+  "repository": {
+    "url": "https://github.com/Lilly-Tech-Collab/ai-school-mcp",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "websiteUrl": "https://lillytechsystems.com/ai-school/developers.html",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "ai-school-mcp",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "AI_SCHOOL_SITE",
+          "description": "Override the site the curriculum API is read from. Only useful for local testing against a staging copy; defaults to https://lillytechsystems.com",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

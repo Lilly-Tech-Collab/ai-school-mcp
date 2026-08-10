@@ -1,0 +1,50 @@
+{
+  "name": "ai-school-mcp",
+  "version": "1.0.0",
+  "description": "MCP server exposing the free AI School curriculum (550+ tracks, 21,000+ lessons) to Claude Code, Claude Desktop and any other MCP client.",
+  "mcpName": "io.github.lilly-tech-collab/ai-school",
+  "type": "module",
+  "bin": {
+    "ai-school-mcp": "./server.js"
+  },
+  "main": "server.js",
+  "files": [
+    "server.js",
+    "server.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node smoke-test.mjs",
+    "prepublishOnly": "node smoke-test.mjs",
+    "inspect": "npx -y @modelcontextprotocol/inspector node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "education",
+    "curriculum",
+    "claude"
+  ],
+  "author": "Lilly Tech Systems",
+  "license": "MIT",
+  "homepage": "https://lillytechsystems.com/ai-school/developers.html",
+  "bugs": {
+    "url": "https://github.com/Lilly-Tech-Collab/ai-school-mcp/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lilly-Tech-Collab/ai-school-mcp.git"
+  }
+}

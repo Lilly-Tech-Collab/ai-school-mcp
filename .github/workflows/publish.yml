@@ -1,0 +1,86 @@
+name: Publish to npm
+
+# Trusted publishing (OIDC). No NPM_TOKEN, no stored credential: npm verifies
+# GitHub's OIDC token against the trusted publisher configured on the package,
+# and stamps the release with a provenance attestation.
+#
+# This requires a trusted publisher to exist on npmjs.com for ai-school-mcp,
+# pointing at THIS repo and THIS workflow filename. A trusted publisher can
+# only be configured on a package that already exists, so v1.0.0 must be
+# published interactively once before this workflow can do anything. See
+# README.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Pack and test only, do not publish"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      # Node 22 and npm 11.5.1+ are the floor for trusted publishing.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Use an npm new enough for trusted publishing
+        run: npm install -g npm@latest && npm --version
+
+      - run: npm install --no-audit --no-fund
+
+      - name: Smoke test
+        run: node smoke-test.mjs
+
+      - name: Check version is not already published
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VER" version >/dev/null 2>&1; then
+            echo "::error::$NAME@$VER is already on npm. Bump package.json and server.json first."
+            exit 1
+          fi
+          echo "$NAME@$VER is publishable."
+
+      - name: Check package.json and server.json versions agree
+        run: |
+          P=$(node -p "require('./package.json').version")
+          S=$(node -p "require('./server.json').version")
+          SP=$(node -p "require('./server.json').packages[0].version")
+          if [ "$P" != "$S" ] || [ "$P" != "$SP" ]; then
+            echo "::error::version mismatch: package.json=$P server.json=$S packages[0]=$SP"
+            exit 1
+          fi
+          echo "versions agree at $P"
+
+      - name: Pack (shows exactly what would ship)
+        run: npm pack --dry-run
+
+      - name: Publish
+        if: ${{ inputs.dry_run == false }}
+        run: npm publish --access public
+
+      - name: Confirm it is live
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          for i in 1 2 3 4 5 6; do
+            if [ "$(npm view "$NAME@$VER" version 2>/dev/null)" = "$VER" ]; then
+              echo "$NAME@$VER is live."; exit 0
+            fi
+            echo "not visible yet, retrying ($i/6)"; sleep 10
+          done
+          echo "::error::publish reported success but $NAME@$VER is not resolvable."
+          exit 1
