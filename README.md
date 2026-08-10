@@ -12,13 +12,13 @@ to check.
 
 ## Install
 
-Node 20+ required (it uses the global `fetch`). Nothing else: no API key, no
-account, no server to run.
+One command, nothing to clone. Node 20+ and git are the only requirements: no
+API key, no account, no server to run.
 
 **Claude Code**
 
 ```bash
-claude mcp add ai-school -- npx -y ai-school-mcp
+claude mcp add ai-school -- npx -y github:Lilly-Tech-Collab/ai-school-mcp
 ```
 
 **Claude Desktop** - add to `claude_desktop_config.json`:
@@ -28,15 +28,29 @@ claude mcp add ai-school -- npx -y ai-school-mcp
   "mcpServers": {
     "ai-school": {
       "command": "npx",
-      "args": ["-y", "ai-school-mcp"]
+      "args": ["-y", "github:Lilly-Tech-Collab/ai-school-mcp"]
     }
   }
 }
 ```
 
-### From a clone instead
+Pin a version if you would rather not track `main`:
 
-For contributing, or to run against a local copy of the site:
+```bash
+claude mcp add ai-school -- npx -y github:Lilly-Tech-Collab/ai-school-mcp#v1.0.0
+```
+
+<sub>**The trade-off:** `npx` from a git source re-fetches on every launch, so
+the server takes roughly 5 seconds to start each time your client opens it,
+and it needs git on PATH. Once this is on npm the same command with
+`ai-school-mcp` in place of the `github:` spec will start in about a second and
+drop the git requirement. If the delay bothers you before then, use the clone
+below, which starts instantly.</sub>
+
+### From a clone
+
+Faster to start, and the right setup for contributing or for pointing at a
+local copy of the site:
 
 ```bash
 git clone https://github.com/Lilly-Tech-Collab/ai-school-mcp.git
@@ -52,9 +66,9 @@ claude mcp add ai-school -- node "$PWD/server.js"
 Set `AI_SCHOOL_SITE` to point the server at a different host; it defaults to
 `https://lillytechsystems.com`.
 
-No API key. No account. The server reads the public static curriculum API at
-`https://lillytechsystems.com/ai-school/api/v1/`, which is a set of JSON files on
-the same host as the site.
+The server reads the public static curriculum API at
+`https://lillytechsystems.com/ai-school/api/v1/`, which is a set of JSON files
+on the same host as the site. Nothing is authenticated and nothing is written.
 
 ## Tools
 
