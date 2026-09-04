@@ -1,8 +1,8 @@
 {
   "name": "ai-school-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server exposing the free AI School curriculum (550+ tracks, 21,000+ lessons) to Claude Code, Claude Desktop and any other MCP client.",
-  "mcpName": "io.github.lilly-tech-collab/ai-school",
+  "mcpName": "com.lillytechsystems/ai-school",
   "type": "module",
   "bin": {
     "ai-school-mcp": "./server.js"

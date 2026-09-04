@@ -12,13 +12,13 @@ to check.
 
 ## Install
 
-One command, nothing to clone. Node 20+ and git are the only requirements: no
-API key, no account, no server to run.
+One command, nothing to clone. Node 20+ is the only requirement: no API key,
+no account, no server to run.
 
 **Claude Code**
 
 ```bash
-claude mcp add ai-school -- npx -y github:Lilly-Tech-Collab/ai-school-mcp
+claude mcp add ai-school -- npx -y ai-school-mcp
 ```
 
 **Claude Desktop** - add to `claude_desktop_config.json`:
@@ -28,24 +28,25 @@ claude mcp add ai-school -- npx -y github:Lilly-Tech-Collab/ai-school-mcp
   "mcpServers": {
     "ai-school": {
       "command": "npx",
-      "args": ["-y", "github:Lilly-Tech-Collab/ai-school-mcp"]
+      "args": ["-y", "ai-school-mcp"]
     }
   }
 }
 ```
 
-Pin a version if you would rather not track `main`:
+Pin a version if you would rather not track the latest release:
 
 ```bash
-claude mcp add ai-school -- npx -y github:Lilly-Tech-Collab/ai-school-mcp#v1.0.0
+claude mcp add ai-school -- npx -y ai-school-mcp@1.0.1
 ```
 
-<sub>**The trade-off:** `npx` from a git source re-fetches on every launch, so
-the server takes roughly 5 seconds to start each time your client opens it,
-and it needs git on PATH. Once this is on npm the same command with
-`ai-school-mcp` in place of the `github:` spec will start in about a second and
-drop the git requirement. If the delay bothers you before then, use the clone
-below, which starts instantly.</sub>
+**Hosted, nothing to install.** The same server also runs at
+`https://lillytechsystems.com/mcp` over Streamable HTTP, and is listed in the
+official MCP Registry as `com.lillytechsystems/ai-school`:
+
+```bash
+claude mcp add --transport http ai-school https://lillytechsystems.com/mcp
+```
 
 ### From a clone
 
